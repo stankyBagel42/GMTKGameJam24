@@ -11,12 +11,11 @@ public class ColliderBlock : MonoBehaviour
     [SerializeField] CameraShake cameraShake;
     void OnCollisionEnter2D(Collision2D other)
     {
-        Rigidbody2D rigidbody = other.transform.GetComponent<Rigidbody2D>();
         Debug.Log("I've been hit by" + other.gameObject.name);
-        Debug.Log("Hit with velocity "+rigidbody.velocity.magnitude);
+        Debug.Log("Hit with velocity "+other.relativeVelocity.magnitude);
         string tag = other.gameObject.tag;
         if (tag == "Player"){
-            if(rigidbody.velocity.magnitude > speedToKill){                
+            if(other.relativeVelocity.magnitude > speedToKill){                
                 Destroy(transform.gameObject);
             }
         }
