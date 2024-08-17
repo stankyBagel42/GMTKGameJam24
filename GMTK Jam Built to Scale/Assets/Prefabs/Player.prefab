@@ -235,11 +235,14 @@ MonoBehaviour:
   maxSpeed: 25
   baseMoveForce: 1
   jumpSpeed: 20
-  sizeChangeSpeed: 0.9
-  animator: {fileID: 3684451844938864033}
+  sizeChangeSpeed: 0.1
+  coyoteTimeDist: 0.5
   normalSprite: {fileID: 21300000, guid: e91ad1626a91bea41814a9f21f76a1c9, type: 3}
   growingSprite: {fileID: 21300000, guid: 6396b5be8ab89de46924a3446aaf86b7, type: 3}
   shrinkingSprite: {fileID: 21300000, guid: ab0539d3b3d028742b2e810cc173867a, type: 3}
+  minScale: 0.5
+  maxScale: 5
+  isGrounded: 0
 --- !u!50 &6392176896985527004
 Rigidbody2D:
   serializedVersion: 4
