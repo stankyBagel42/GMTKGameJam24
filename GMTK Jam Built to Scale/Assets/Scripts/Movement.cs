@@ -74,7 +74,7 @@ public class Movement : MonoBehaviour
         _currentVelocity = Vector2.ClampMagnitude(_currentVelocity, maxSpeed);
 
         // the y scale is always positive, if the scale is larger the force applied should be larger, at a minimum it is 1x
-        _currentVelocity *= Mathf.Min(1, transform.localScale.y);
+        // _currentVelocity *= Mathf.Min(1, transform.localScale.y);
         _rigidbody.AddForce(_currentVelocity);
         var contacts = _rigidbody.GetContacts(_colliders);
         if (contacts > 0){
@@ -87,7 +87,7 @@ public class Movement : MonoBehaviour
     public void OnMove(InputAction.CallbackContext ctx)
     {
         // set new horizontal velocity
-        _currentVelocity.x = ctx.ReadValue<float>() * baseMoveForce;
+        _currentVelocity.x = ctx.ReadValue<float>() * baseMoveForce * transform.GetComponent<Rigidbody2D>().mass;
         if (animator)
         {
             Vector3 localScale = transform.localScale;
