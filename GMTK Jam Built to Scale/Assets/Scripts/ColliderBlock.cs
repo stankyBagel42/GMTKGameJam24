@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.U2D.Animation;
-using System.Collections;
 
 public class ColliderBlock : MonoBehaviour
 {
@@ -28,7 +27,7 @@ public class ColliderBlock : MonoBehaviour
         if (tag == "Player")
         {
             Rigidbody2D rigidbody = other.transform.GetComponent<Rigidbody2D>();
-            float force = rigidbody.velocity.magnitude * rigidbody.mass;
+            float force = other.relativeVelocity.magnitude * rigidbody.mass;
             Debug.Log("I've been hit by" + other.gameObject.name);
             Debug.Log("Hit with force " + force);
             if (force > breakForce)

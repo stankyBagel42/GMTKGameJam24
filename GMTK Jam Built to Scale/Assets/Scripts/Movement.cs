@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
+
 
 public class Movement : MonoBehaviour
 {
@@ -12,28 +8,36 @@ public class Movement : MonoBehaviour
     [SerializeField] private float baseMoveForce = 4f;
     [SerializeField] private float jumpSpeed = 8f;
     [SerializeField] private float sizeChangeSpeed = 0.1f;
-    [SerializeField] private Animator animator;
+
+    [SerializeField] private float coyoteTimeDist = 0.5f;
 
     [SerializeField] private Sprite normalSprite;
     [SerializeField] private Sprite growingSprite;
     [SerializeField] private Sprite shrinkingSprite;
 
+    [SerializeField] private float minScale = 0.5f;
+    [SerializeField] private float maxScale = 5f;
+
+    [SerializeField]
+    private bool isGrounded = false;
 
 
 
-    static readonly int IsRunning = Animator.StringToHash("IsRunning");
-    static readonly int IsJumping = Animator.StringToHash("IsJumping");
+
     static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
 
 
     // -1 for shrinking, 0 for no change, 1 for growing
     private float _growDirection = 0;
-    private Vector2 _currentVelocity;
+    private Vector2 _currentForce;
 
     private Rigidbody2D _rigidbody;
     private Collider2D _collider;
 
     private Collider2D[] _colliders;
+
+    private ContactPoint2D[] contacts;
+    private Vector2 _lastGroundPoint;
 
 
     private void Awake()
@@ -41,26 +45,48 @@ public class Movement : MonoBehaviour
         _rigidbody = GetComponent<Rigidbody2D>();
         _collider = GetComponent<Collider2D>();
         _colliders = new Collider2D[1];
+        // 4 contact points for the feet contacts
+        contacts = new ContactPoint2D[4];
         _colliders[0] = _collider;
-        _currentVelocity = _rigidbody.velocity;
+        _currentForce = new Vector2(0,0);
     }
 
     // Changes the object's scale, and re-calculates the speed based on the difference.
-    private void ChangeScale(float changeSpeed){
+    private void ChangeScale(float changeSpeed)
+    {
 
-        var spriteRenderer=transform.GetComponentInChildren<SpriteRenderer>();
+        var spriteRenderer = transform.GetComponentInChildren<SpriteRenderer>();
         // change the speed based on the square of the changing scale (since mass would be quadratic when compared to scale changing)
-        var velocityChange = changeSpeed * changeSpeed;
-        _rigidbody.velocity /= velocityChange;
-
-        if (changeSpeed == 1){
+        if (changeSpeed == 1)
+        {
             spriteRenderer.sprite = normalSprite;
 
-        }else{
-            transform.localScale *= changeSpeed;
-            if(changeSpeed > 1){
+        }
+        else
+        {
+            Vector3 newScale = transform.localScale;
+            newScale *= changeSpeed;
+
+            // clamp y and z scales as they are always positive
+            
+            newScale.x = Mathf.Clamp(newScale.x, minScale, maxScale);
+            newScale.y = Mathf.Clamp(newScale.y, minScale, maxScale);
+            newScale.z = Mathf.Clamp(newScale.z, minScale, maxScale);
+
+
+            // only update velocity if the scale is actually changing
+            if ((transform.localScale - newScale).magnitude > 0f){                
+                var velocityChange = changeSpeed * changeSpeed;
+                _rigidbody.velocity /= velocityChange;
+
+            }
+            transform.localScale = newScale;
+            if (changeSpeed > 1)
+            {
                 spriteRenderer.sprite = growingSprite;
-            }else{
+            }
+            else
+            {
                 spriteRenderer.sprite = shrinkingSprite;
             }
         }
@@ -69,70 +95,69 @@ public class Movement : MonoBehaviour
     private void Update()
     {
         float changeSpeed = 1 + (_growDirection * sizeChangeSpeed * Time.deltaTime);
-        ChangeScale(changeSpeed);
-        // _rigidbody.velocity = _currentVelocity;
-        _currentVelocity = Vector2.ClampMagnitude(_currentVelocity, maxSpeed);
+        ChangeScale(changeSpeed); 
 
         // the y scale is always positive, if the scale is larger the force applied should be larger, at a minimum it is 1x
-        // _currentVelocity *= Mathf.Min(1, transform.localScale.y);
-        _rigidbody.AddForce(_currentVelocity);
-        var contacts = _rigidbody.GetContacts(_colliders);
-        if (contacts > 0){
-                animator.SetBool(IsGrounded, true);
-        }else{
-            animator.SetBool(IsGrounded, false);
+        _rigidbody.AddForce(_currentForce);
+
+
+        _currentForce.y = 0;      
+        // get the contacts
+        int num_contact = _rigidbody.GetContacts(contacts);
+
+        bool contactBelow = false;
+        for(int i=0; i< num_contact; i++){
+            _lastGroundPoint = contacts[i].point;
+            // contact below
+            if (_lastGroundPoint.y < transform.position.y){
+                contactBelow=true;
+            }
+        }
+        // add coyote time
+        Vector2 curPos = new Vector2(transform.position.x, transform.position.y);
+        float distToLastGround =  (curPos- _lastGroundPoint).magnitude;
+        if (contactBelow || distToLastGround < coyoteTimeDist)
+        {
+            isGrounded = true;
+        }
+        else
+        {
+            isGrounded = false;
         }
     }
-    
+
     public void OnMove(InputAction.CallbackContext ctx)
     {
         // set new horizontal velocity
-        _currentVelocity.x = ctx.ReadValue<float>() * baseMoveForce * transform.GetComponent<Rigidbody2D>().mass;
-        if (animator)
+        _currentForce.x = ctx.ReadValue<float>() * baseMoveForce * transform.localScale.magnitude;
+    }
+
+    public void OnJump(InputAction.CallbackContext ctx)
+    {
+        var jumpVal = ctx.ReadValue<float>();
+        print("Got: " + jumpVal);
+        if (jumpVal > 0f && isGrounded)
         {
-            Vector3 localScale = transform.localScale;
-            if (_currentVelocity.x  > 0)
-            {
-                localScale = new Vector3(Mathf.Abs(localScale.x), localScale.y, localScale.z);
-            } else if (_currentVelocity.x  < 0)
-            {
-                localScale = new Vector3(-1*Mathf.Abs(localScale.x), localScale.y, localScale.z);
-            }
-        
-            transform.localScale = localScale;
-            if (Mathf.Abs(_currentVelocity.x) > 0.01f)
-            {
-                animator.SetBool(IsRunning, true);
-            }
-            else
-            {
-                animator.SetBool(IsRunning, false);
-            }
-        }    
+            float scaleMagnitude = Mathf.Pow(transform.localScale.x, 1.5f);
+            float jumpScale = Mathf.Min(scaleMagnitude, 1.5f);
+            _currentForce.y =  jumpVal * jumpSpeed * jumpScale;
+            
+            print("Jumping! Cur y vel: " + _currentForce.y + " | isGrounded: " + isGrounded);
+            isGrounded = false;
+        }
     }
 
-    public void OnJump(InputAction.CallbackContext ctx){
-        _currentVelocity.y = ctx.ReadValue<float>() * jumpSpeed;
-        if (Mathf.Abs(_currentVelocity.y) < 0.01f)
-            {
-                animator.SetBool(IsJumping, true);
-                animator.SetBool(IsGrounded, false);
-            }
-            else
-            {
-                animator.SetBool(IsJumping, false);
-            }
-    }
-
-    public void OnSizeChange(InputAction.CallbackContext ctx){
+    public void OnSizeChange(InputAction.CallbackContext ctx)
+    {
         float direction = ctx.ReadValue<float>();
 
-        if(direction != 0){
+        if (direction != 0)
+        {
             direction /= Mathf.Abs(direction);
         }
 
         _growDirection = direction;
     }
-    
- 
+
+
 }
