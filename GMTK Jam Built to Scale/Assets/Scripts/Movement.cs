@@ -7,8 +7,8 @@ using UnityEngine.Serialization;
 
 public class Movement : MonoBehaviour
 {
-
-    [SerializeField] private float speed = 8f;
+    [SerializeField] private float maxSpeed = 10f;
+    [SerializeField] private float speed = 4f;
     [SerializeField] private float jumpSpeed = 8f;
     [SerializeField] private Animator animator;
     static readonly int IsRunning = Animator.StringToHash("IsRunning");
@@ -33,7 +33,9 @@ public class Movement : MonoBehaviour
 
     private void Update()
     {
-        _rigidbody.velocity = _currentVelocity;
+        // _rigidbody.velocity = _currentVelocity;
+        _currentVelocity = Vector2.ClampMagnitude(_currentVelocity, maxSpeed);
+        _rigidbody.AddForce(_currentVelocity);
         var contacts = _rigidbody.GetContacts(_colliders);
         if (contacts > 0){
                 animator.SetBool(IsGrounded, true);
