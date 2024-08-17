@@ -39,16 +39,20 @@ public class Movement : MonoBehaviour
     private ContactPoint2D[] contacts;
     private Vector2 _lastGroundPoint;
 
+    private void OnEnable()
+    {
+        _colliders = new Collider2D[1];
+        // 4 contact points for the feet contacts
+        contacts = new ContactPoint2D[4];
+        _currentForce = new Vector2(0,0);
+        _colliders[0] = _collider;
+
+    }
 
     private void Awake()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
         _collider = GetComponent<Collider2D>();
-        _colliders = new Collider2D[1];
-        // 4 contact points for the feet contacts
-        contacts = new ContactPoint2D[4];
-        _colliders[0] = _collider;
-        _currentForce = new Vector2(0,0);
     }
 
     // Changes the object's scale, and re-calculates the speed based on the difference.
