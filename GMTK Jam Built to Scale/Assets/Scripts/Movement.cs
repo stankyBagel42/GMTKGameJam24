@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -20,9 +21,7 @@ public class Movement : MonoBehaviour
 
     [SerializeField]
     private bool isGrounded = false;
-
-
-
+    [SerializeField] private Transform spawnPoint;
 
     static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
 
@@ -60,7 +59,6 @@ public class Movement : MonoBehaviour
         if (changeSpeed == 1)
         {
             spriteRenderer.sprite = normalSprite;
-
         }
         else
         {
@@ -159,5 +157,18 @@ public class Movement : MonoBehaviour
         _growDirection = direction;
     }
 
+   private void OnTriggerEnter2D(Collider2D other)
+    {
+        string tag = other.gameObject.tag;
+
+        if (tag == "Respawn") {
+            //TODO things on death
+            transform.localScale = Vector3.one;
+            _currentForce = Vector2.zero;
+            _rigidbody.velocity = Vector2.zero;
+            _rigidbody.angularVelocity = 0f;
+            gameObject.transform.position = spawnPoint.position;
+        }
+   }
 
 }
