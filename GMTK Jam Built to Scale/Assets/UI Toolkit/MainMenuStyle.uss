@@ -1,0 +1,23 @@
+.header {
+    font-size: 40px;
+    -unity-text-align: upper-center;
+}
+
+.button {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    align-self: center;
+    width: 300px;
+    height: 90px;
+    background-color: rgba(0, 0, 0, 0);
+    margin-top: 1%;
+    transition-duration: 0.35s;
+    background-image: url("project://database/Assets/OArielG/2DSimpleUIPack/Examples/Graphics/ui-large-buttons-horizontal.png?fileID=-697223426185652446&guid=3316aabd5dd7e2743ad1214e35350560&type=3#ui-large-buttons-horizontal_0");
+}
+
+.button:hover {
+    scale: 1.1 1.1;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
